@@ -17,7 +17,7 @@ after_initialize do
 
 
   DiscourseBlogger::Engine.routes.draw do
-    get "/script.js" => 'blogger_topic#script'
+    get "/script" => 'blogger_topic#script'
     get "/topic" => 'blogger_topic#navigate_to'
     post "/post_counts" => 'blogger_topic#post_counts'
   end
