@@ -1,0 +1,4 @@
+en:
+  site_settings:
+    user_notifying_new_post_from_blogger: "Who will post a notice to the latest blogger topic when a new topic appears. Leave blank to disable notification."
+    blogger_blog_name: "The name of the blog posting to this discourse site"
