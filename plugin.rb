@@ -15,7 +15,6 @@ after_initialize do
     end
   end
 
-
   DiscourseBlogger::Engine.routes.draw do
     get "/script" => 'blogger_topic#script'
     get "/topic" => 'blogger_topic#navigate_to'
@@ -145,17 +144,18 @@ after_initialize do
       return array;
     }
 
+    var permalinks = [];
     var linkEls = toArray(document.getElementsByClassName("comment-link"));
 
     // Rewrite hrefs to uriencode author and title in topics (Blogger templates can't generate links with encoded text).
     linkEls.forEach(function(linkEl) {
 
-        var matches = /(.*?blogger\\/topic\?)author=(.*?)&pl=(.*?)&nojs=y&title=(.*)/.exec(linkEl.href);
-
+        var matches = /(.*?blogger\\/topic\?)\\?author=(.*?)&pl=(.*?)&nojs=y&title=(.*)/.exec(linkEl.href);
+        var pl;
         if (matches) {
             var post = matches[1];
             var author = matches[2];
-            var pl = matches[3];
+            pl = matches[3];
             var title = matches[4];
 
             // Special case for title, as blogger has a bug with escaping embedded single quotes
@@ -166,25 +166,16 @@ after_initialize do
                 title = els[0].innerHTML;
             }
 
-            linkEl.href = post +
-                '&author=' + encodeURIComponent(author) +
-                '&title=' + encodeURIComponent(title) +
-                '&pl=' + pl;
+            linkEl.href = post + "?" +
+                'author=' + encodeURIComponent(author) + "&" +
+                'title=' + encodeURIComponent(title) + "&" +
+                'pl=' + pl;
+        } else {
+          console.error("Invalid Discourse comment link " + linkEl.href);
+          pl = "BadPermalink";
         }
-    });
 
-
-    // Fetch and update comment counts.
-    var permalinks = linkEls.map(function(el) {
-        return el.href
-            .split("?")[1]
-            .split("&")
-            .map(function(param) {
-                return param.split("=");
-            })
-            .filter(function(paramPair) {
-                return paramPair[0] == "pl";
-            })[0][1];
+        permalinks.push(pl);
     });
 
     var xhr = new XMLHttpRequest();
