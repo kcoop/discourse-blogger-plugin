@@ -62,7 +62,7 @@ after_initialize do
               contents = "Original post may be found on <a href='#{blog_post_url}'>#{SiteSetting.blogger_blog_name}</a>."
               user = User.where(username_lower: author_name.downcase).first
               if user.blank?
-                user = User.where(SiteSetting.embed_by_username.downcase).first
+                user = User.where(username_lower: SiteSetting.embed_by_username.downcase).first
               end
 
               # Determine the most recent topic before we create this one, so we can post a 'New Post!' to it.
@@ -75,19 +75,19 @@ after_initialize do
                 end
               end
 
-              creator = PostCreator.new(user,
+              post_creator = PostCreator.new(user,
                                         title: title,
                                         raw: contents,
                                         skip_validations: true,
                                         cook_method: Post.cook_methods[:raw_html],
                                         category: blog_post_category_id)
-              post = creator.create
+              post = post_creator.create
               if post.present?
                 TopicEmbed.create!(topic_id: post.topic_id,
                                    embed_url: blog_post_url,
                                    content_sha1: Digest::SHA1.hexdigest(contents),
                                    post_id: post.id)
-                topic_path = path("/t/#{post.topic_id}/1")
+                topic_path = post.topic.url
               end
 
               # If a notifying_username was specified, generate a post in the most recent topic in the blog post category
@@ -104,7 +104,10 @@ after_initialize do
             return render :status => :forbidden, :text => "We can't accept first posts from pages that have not been processed by javascript. If you are writing a bot, please contact us on the correct way to generate this URL. Also, if this safeguard appears to be in error, please <a href='/about'>let us know</a>"
           end
         else
-          topic_path = path("/t/#{topic_id}")
+          topic = Topic.find_by_id(topic_id)
+          if topic.present?
+            topic_path = topic.url
+          end
         end
       end
 

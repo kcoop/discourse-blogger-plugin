@@ -19,7 +19,7 @@ you can just have to add `git clone https://github.com/kcoop/discourse-blogger-p
 to the list of `after_code` executions in your `/var/discourse/containers/app.yml`
 file. (filename might be different in your setup!)
 
-# Blogger Template
+# Blogger Template Configuration
 
 The blog post template on Blogger needs to contain the following script:
 
@@ -37,9 +37,13 @@ The blog post template on Blogger needs to contain the following script:
 In addition, comment links should be in the following format (replace DISCOURSE_URL with your Discourse site). Don't worry about
 URIEncoding the author or title, the javascript will take care of that.
 
-    <a class='comment-link' href='DISCOURSE_URL/blogger/topic?id=author=The Post Author Name&pl=http://www.somewebsite.com/blogpost-permalink&nojs=y&title=The Title of the Post' target='_blank'>
+<a class='comment-link' expr:href='&quot;DISCOURSE_URL/blogger/topic?author=&quot; + data:post.author + &quot;&amp;pl=&quot; + data:post.url + &quot;&amp;nojs=y&amp;title=&quot; + data:post.title' target='_blank'>
 
-# Discourse
+<span class='hidden-title-holder' style='display:none'><data:post.title/></span>
+
+Comments</a>
+
+# Discourse Configuration
 
 Follow the directions for [creating an embeddable host on your Discourse site](https://meta.discourse.org/t/embedding-discourse-comments-via-javascript/31963).
 discourse-blogger-plugin will use the category you specify for new topics, and will link the topic to the default user you specify here as author if it
