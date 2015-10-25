@@ -32,7 +32,7 @@ after_initialize do
 
     skip_before_filter :check_xhr, :preload_json, :verify_authenticity_token
 
-    before_filter :ensure_embeddable, except: [ :info ]
+#    before_filter :ensure_embeddable, except: [ :info ]
 
     def initialize()
       @mutex = Mutex.new
