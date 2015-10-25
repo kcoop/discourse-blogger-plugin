@@ -21,15 +21,14 @@ file. (filename might be different in your setup!)
 
 # Blogger Template Configuration
 
-The blog post template on Blogger needs to contain the following script:
+The blog post template on Blogger needs to contain the following script (replace DISCOURSE_URL with your Discourse site):
 
     <script type="text/javascript">
-      DiscourseBlogger = { discourseUrl: 'http://localhost:4000/',
-                         discourseEmbedUrl: 'http://example.com/blog/entry-123.html' };
+      DiscourseBlogger = { discourseUrl: 'DISCOURSE_URL/' };
 
       (function() {
         var d = document.createElement('script'); d.type = 'text/javascript'; d.async = true;
-        d.src = DiscourseBlogger.discourseUrl + 'javascripts/connect.js';
+        d.src = DiscourseBlogger.discourseUrl + 'assets/javascripts/discourse-blogger.js';
         (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(d);
       })();
     </script>

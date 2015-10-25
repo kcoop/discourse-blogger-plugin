@@ -3,7 +3,7 @@
 # version: 0.0.1
 # authors: Ken Cooper
 # url: https://github.com/kcoop/discourse-blogger-plugin
-#register_asset "javascripts/discourse-blogger.js", :server_side
+register_asset "javascripts/discourse-blogger.js"
 
 after_initialize do
 
