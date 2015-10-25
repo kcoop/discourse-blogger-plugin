@@ -1,4 +1,4 @@
-# name: discourse-blogger-integration
+# name: discourse-blogger-plugin
 # about: A plugin to allow automated topic creation from Blogger blog posts.
 # version: 0.0.1
 # authors: Ken Cooper
