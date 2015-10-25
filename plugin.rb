@@ -202,7 +202,7 @@ after_initialize do
       def ensure_embeddable
 
         if !(Rails.env.development? && current_user.try(:admin?))
-          raise Discourse::InvalidAccess.new('invalid referer host') unless Discourse::EmbeddableHost.host_allowed?(request.referer)
+          raise Discourse::InvalidAccess.new('invalid referer host') unless EmbeddableHost.host_allowed?(request.referer)
         end
 
         response.headers['X-Frame-Options'] = "ALLOWALL"
