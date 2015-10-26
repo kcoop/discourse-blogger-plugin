@@ -39,9 +39,18 @@ after_initialize do
     end
 
     def navigate_to
-      blog_post_url = params[:pl].downcase
+      blog_post_url = URI.unescape(params[:pl]).downcase
       title = URI.unescape(params[:title])
       author_name = URI.unescape(params[:author])
+
+      if params[:ts].present?
+        ts = Date.strptime(URI.unescape(params[:ts]), "%m/%d/%Y %I:%M:%S %p")
+      else
+        ts = Date.new()
+      end
+
+      # Sometimes URLs arrive with a query string. Strip it to canonicalize.
+      blog_post_url.split("?")[0]
 
       topic_path = '/'
 
@@ -76,6 +85,7 @@ after_initialize do
 
               post_creator = PostCreator.new(user,
                                         title: title,
+                                        created_at: ts,
                                         raw: contents,
                                         skip_validations: true,
                                         cook_method: Post.cook_methods[:raw_html],
@@ -92,14 +102,21 @@ after_initialize do
               # If a notifying_username was specified, generate a post in the most recent topic in the blog post category
               # that a new topic is available.
               if last_blog_post_topic
-                creator = PostCreator.new(user_notifying_new_post,
-                  topic_id: last_blog_post_topic.id,
-                  raw: "<h3>New Post!</h3><h4><a href='#{topic_path}'>#{title}</a></h4>")
-                creator.create
+
+                # Older posts that don't exist on this system shouldn't generate "New Post!"
+                if ts > last_blog_post_topic.created_at
+                  creator = PostCreator.new(user_notifying_new_post,
+                    topic_id: last_blog_post_topic.id,
+                    raw: "<h3>New Post!</h3><h4><a href='#{blog_post_url}'>#{title}</a></h4><a href='#{topic_path}'>Go directly to topic</a>")
+                  creator.create
+                else
+                  notify_new_post = false
+                  Rails.logger.info("DiscourseBloggerPlugin: added post older (#{ts}) than most recent (#{last_blog_post_topic.created_at}), suppressing notification.")
+                end
               end
             end
           else
-            Rails.logger.warn("Attempt to post from link that wasn't properly escaped by javascript, likely a bot.")
+            Rails.logger.info("DiscourseBloggerPlugin: Attempt to post from link that wasn't properly escaped by javascript, likely a bot.")
             return render :status => :forbidden, :text => "We can't accept first posts from pages that have not been processed by javascript. If you are writing a bot, please contact us on the correct way to generate this URL. Also, if this safeguard appears to be in error, please <a href='/about'>let us know</a>"
           end
         else
@@ -130,14 +147,13 @@ after_initialize do
     end
 
     # Put this here rather than in a file since I haven't found a way to give an asset a fixed public name.
-    # Note that the regex in here needed a backslash escaped for Ruby's sake, so moving the script to a file will
-    # need it removed.
+    # Note that the regex in here needed backslashes escaped for Ruby's sake, so moving the script to a file will
+    # need them removed.
     def script
       render :js => <<-eos
 (function() {
     function toArray(el) {
       var array = [];
-      // iterate backwards ensuring that length is an UInt32
       for (var i=0,len=el.length; i < len; i++) {
         array[i] = el[i];
       }
@@ -147,16 +163,16 @@ after_initialize do
     var permalinks = [];
     var linkEls = toArray(document.getElementsByClassName("comment-link"));
 
-    // Rewrite hrefs to uriencode author and title in topics (Blogger templates can't generate links with encoded text).
+    // Rewrite hrefs to uriencode params (Blogger templates can't generate links with encoded text).
     linkEls.forEach(function(linkEl) {
 
-        var matches = /(.*?blogger\\/topic\?)\\?author=(.*?)&pl=(.*?)&nojs=y&title=(.*)/.exec(linkEl.href);
-        var pl;
+        var matches = /(.*?blogger\\/topic\?)\\?ts=(.*?)&author=(.*?)&pl=(.*?)&nojs=y/.exec(linkEl.href);
+        var pl = null;
         if (matches) {
             var post = matches[1];
-            var author = matches[2];
-            pl = matches[3];
-            var title = matches[4];
+            var ts = matches[2];
+            var author = matches[3];
+            pl = matches[4];
 
             // Special case for title, as blogger has a bug with escaping embedded single quotes
             // for attributes, so the template will have generated the title text into a hidden span
@@ -167,10 +183,13 @@ after_initialize do
             }
 
             linkEl.href = post + "?" +
+                'ts' = encodeURIComponent(ts) + "&" +
                 'author=' + encodeURIComponent(author) + "&" +
                 'title=' + encodeURIComponent(title) + "&" +
                 'pl=' + pl;
-        } else {
+        }
+
+        if (pl == null) {
           console.error("Invalid Discourse comment link " + linkEl.href);
           pl = "BadPermalink";
         }
@@ -180,6 +199,7 @@ after_initialize do
 
     var xhr = new XMLHttpRequest();
     xhr.open("POST", DiscourseBlogger.discourseUrl + "blogger/post_counts");
+    // Removed since Discourse doesn't support Content-Type in Access-Control-Allow-Headers
     //xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     xhr.onreadystatechange = function () {
         if (xhr.readyState == 4 && xhr.status == 200) {
