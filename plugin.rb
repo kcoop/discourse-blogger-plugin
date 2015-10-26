@@ -180,7 +180,7 @@ after_initialize do
 
     var xhr = new XMLHttpRequest();
     xhr.open("POST", DiscourseBlogger.discourseUrl + "blogger/post_counts");
-    xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    //xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     xhr.onreadystatechange = function () {
         if (xhr.readyState == 4 && xhr.status == 200) {
             var countsByPermalink = JSON.parse(xhr.responseText).counts;
