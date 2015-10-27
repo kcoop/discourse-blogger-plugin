@@ -18,6 +18,11 @@ to be the author of this notification. Leave this blank to disable it.
 
 ![New Post Image](doc/images/newpost.png)
 
+# Demo
+
+The financial blog [Calculated Risk](http://http://www.calculatedriskblog.com/) has its comments linked to the
+Discourse discussion site [Hoocoodanode?](http://hoocoodanode.org) using this plugin.
+
 ## Installation
 
 Please read the official discourse [plugin installation](https://meta.discourse.org/t/install-a-plugin/19157)
