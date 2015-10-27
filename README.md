@@ -5,9 +5,18 @@ This [discourse](http://www.discourse.org/) plugin integrates a Blogger blog wit
 embedding. Each blog post contains a comments link, which when navigated for the first time generates a topic on the discourse
 server with the post's title, author, and permalink. Subsequent navigations return to the same topic.
 
+![New Topic Image](doc/images/newtopic.png)
+
 Note that we are not actually embedding comments in the blog, just linking them to a Discourse site. For static embedding, see [here](https://meta.discourse.org/t/embedding-discourse-comments-via-javascript/31963).
 
 In addition, the plugin adds post counts to each link.
+
+![Comment Count Image](doc/images/comment_count.png)
+
+As a bonus, if you want a post automatically added to the end of the most recently created blog topic, that says "New Post!", specify a username you want
+to be the author of this notification. Leave this blank to disable it.
+
+![New Post Image](doc/images/newpost.png)
 
 ## Installation
 
@@ -43,8 +52,13 @@ In addition, comment links should be in the following format (replace DISCOURSE_
 # Discourse Configuration
 
 Follow the directions for [creating an embeddable host on your Discourse site](https://meta.discourse.org/t/embedding-discourse-comments-via-javascript/31963).
+
+![New Post Image](doc/images/embed_setup.png)
+
 This plugin will use the embed allowed host and category you specify for embeds for new topics, and will use the topic creation user you specify here if the author
 from your blog post doesn't have a matching name on your discourse site.
+
+![New Post Image](doc/images/plugin_setup.png)
 
 Under plugin settings, set the name of the blog. This will appear in various places when posts are added.
 

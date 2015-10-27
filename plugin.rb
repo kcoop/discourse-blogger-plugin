@@ -45,25 +45,12 @@ after_initialize do
 
     def navigate_to
 
-      if params[:nojs].present?
-        Rails.logger.info("DiscourseBloggerPlugin: Attempt to post from link that wasn't properly escaped by javascript, likely a bot.")
-        return render :status => :forbidden, :text => "We can't accept first posts from pages that have not been processed by javascript. If you are writing a bot, please contact us on the correct way to generate this URL. Also, if this safeguard appears to be in error, please <a href='/about'>let us know</a>"
-      end
-
-      if params[:pl].blank? || params[:title].blank? || params[:author].blank?
+      if params[:pl].blank?
         Rails.logger.warning("DiscourseBloggerPlugin: Bad URL from blogger #{request.url}")
         return render :status => :forbidden, :text => "Invalid URL #{request.url} from #{SiteSetting.blogger_blog_name}. Please <a href='/about'>let us know</a> how you got this link."
       end
 
       blog_post_url = getCanonicalHref(URI.unescape(params[:pl]))
-      title = URI.unescape(params[:title])
-      author_name = URI.unescape(params[:author])
-
-      if params[:ts].present?
-        ts = DateTime.strptime(URI.unescape(params[:ts]), "%m/%d/%Y %I:%M:%S %p")
-      else
-        ts = Date.new()
-      end
 
       topic_path = '/'
 
@@ -71,6 +58,26 @@ after_initialize do
         topic_id = TopicEmbed.topic_id_for_embed(blog_post_url)
 
         if topic_id.blank?
+
+          if params[:nojs].present?
+            Rails.logger.info("DiscourseBloggerPlugin: Attempt to create initial topic from link that wasn't properly escaped by javascript, likely a bot.")
+            return render :status => :forbidden, :text => "We can't accept first posts from pages that have not been processed by javascript. You may either wait a few minutes for someone else to click the comments link first, or turn on Javascript. If this message appears to be in error, please <a href='/about'>let us know</a>"
+          end
+
+          if params[:title].blank? || params[:author].blank? || params[:ts].blank?
+            Rails.logger.warning("DiscourseBloggerPlugin: Bad URL from blogger #{request.url}")
+            return render :status => :forbidden, :text => "Invalid URL #{request.url} from #{SiteSetting.blogger_blog_name}. Please <a href='/about'>let us know</a> how you got this link."
+          end
+
+          title = URI.unescape(params[:title])
+          author_name = URI.unescape(params[:author])
+
+          if params[:ts].present?
+            ts = DateTime.strptime(URI.unescape(params[:ts]), "%m/%d/%Y %I:%M:%S %p")
+          else
+            ts = Date.new()
+          end
+
           Topic.transaction do
             host_site = EmbeddableHost.record_for_host(blog_post_url)
             blog_post_category_id = host_site.try(:category_id)
