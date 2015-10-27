@@ -33,11 +33,9 @@ The blog post template on Blogger needs to contain the following script (replace
       })();
     </script>
 
-In addition, comment links should be in the following format (replace DISCOURSE_URL with your Discourse site). Don't worry about
-URIEncoding the author or title, the javascript will take care of that.
+In addition, comment links should be in the following format (replace DISCOURSE_URL with your Discourse site, including http://).
 
-<a class='comment-link' expr:href='&quot;DISCOURSE_URL/blogger/topic?author=&quot; + data:post.author + &quot;&amp;pl=&quot; + data:post.url + &quot;&amp;nojs=y&amp;title=&quot; + data:post.title' target='_blank'>
-
+  <a class='comment-link' expr:href='&quot;DISCOURSE_URL/blogger/topic?ts=&quot; + data:post.timestamp + &quot;&amp;author=&quot; + data:post.author + &quot;&amp;pl=&quot; + data:post.url + &quot;&amp;nojs=y&quot;' target='_blank'>
 <span class='hidden-title-holder' style='display:none'><data:post.title/></span>
 
 Comments</a>
@@ -47,6 +45,9 @@ Comments</a>
 Follow the directions for [creating an embeddable host on your Discourse site](https://meta.discourse.org/t/embedding-discourse-comments-via-javascript/31963).
 discourse-blogger-plugin will use the category you specify for new topics, and will link the topic to the default user you specify here as author if it
 can't find one matching the author name passed in by the comment link.
+
+You will also need to enable CORS support in order to allow access to a different origin from the script. See here for Docker:
+https://meta.discourse.org/t/how-to-enable-cross-origin-resource-sharing-with-docker/15413
 
 
 

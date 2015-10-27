@@ -38,19 +38,32 @@ after_initialize do
       @mutex = Mutex.new
     end
 
+    def getCanonicalHref(blog_href)
+      # Sometimes URLs arrive with a query string. Strip it to canonicalize.
+      return blog_href.downcase.split("?")[0]
+    end
+
     def navigate_to
-      blog_post_url = URI.unescape(params[:pl]).downcase
+
+      if params[:nojs].present?
+        Rails.logger.info("DiscourseBloggerPlugin: Attempt to post from link that wasn't properly escaped by javascript, likely a bot.")
+        return render :status => :forbidden, :text => "We can't accept first posts from pages that have not been processed by javascript. If you are writing a bot, please contact us on the correct way to generate this URL. Also, if this safeguard appears to be in error, please <a href='/about'>let us know</a>"
+      end
+
+      if params[:pl].blank? || params[:title].blank? || params[:author].blank?
+        Rails.logger.warning("DiscourseBloggerPlugin: Bad URL from blogger #{request.url}")
+        return render :status => :forbidden, :text => "Invalid URL #{request.url} from #{SiteSetting.blogger_blog_name}. Please <a href='/about'>let us know</a> how you got this link."
+      end
+
+      blog_post_url = getCanonicalHref(URI.unescape(params[:pl]))
       title = URI.unescape(params[:title])
       author_name = URI.unescape(params[:author])
 
       if params[:ts].present?
-        ts = Date.strptime(URI.unescape(params[:ts]), "%m/%d/%Y %I:%M:%S %p")
+        ts = DateTime.strptime(URI.unescape(params[:ts]), "%m/%d/%Y %I:%M:%S %p")
       else
         ts = Date.new()
       end
-
-      # Sometimes URLs arrive with a query string. Strip it to canonicalize.
-      blog_post_url.split("?")[0]
 
       topic_path = '/'
 
@@ -58,66 +71,57 @@ after_initialize do
         topic_id = TopicEmbed.topic_id_for_embed(blog_post_url)
 
         if topic_id.blank?
-          # The nojs param is on the raw links, but if our javascript ran, it will have been stripped off.
-          if params[:nojs].blank?
-            Topic.transaction do
-              host_site = EmbeddableHost.record_for_host(blog_post_url)
-              blog_post_category_id = host_site.try(:category_id)
+          Topic.transaction do
+            host_site = EmbeddableHost.record_for_host(blog_post_url)
+            blog_post_category_id = host_site.try(:category_id)
 
-              uri = URI(blog_post_url)
-              host = uri.host
+            contents = "Original post may be found on <a href='#{blog_post_url}'>#{SiteSetting.blogger_blog_name}</a>."
+            user = User.where(username_lower: author_name.downcase).first
+            if user.blank?
+              user = User.where(username_lower: SiteSetting.embed_by_username.downcase).first
+            end
 
-              contents = "Original post may be found on <a href='#{blog_post_url}'>#{SiteSetting.blogger_blog_name}</a>."
-              user = User.where(username_lower: author_name.downcase).first
-              if user.blank?
-                user = User.where(username_lower: SiteSetting.embed_by_username.downcase).first
-              end
-
-              # Determine the most recent topic before we create this one, so we can post a 'New Post!' to it.
-              last_blog_post_topic = nil
-              user_notifying_new_post = nil
-              if SiteSetting.user_notifying_new_post_from_blogger.present?
-                user_notifying_new_post = User.where(username_lower: SiteSetting.user_notifying_new_post_from_blogger).first
-                if user_notifying_new_post
-                  last_blog_post_topic = Topic.where(category_id: blog_post_category_id).recent(1).first
-                end
-              end
-
-              post_creator = PostCreator.new(user,
-                                        title: title,
-                                        created_at: ts,
-                                        raw: contents,
-                                        skip_validations: true,
-                                        cook_method: Post.cook_methods[:raw_html],
-                                        category: blog_post_category_id)
-              post = post_creator.create
-              if post.present?
-                TopicEmbed.create!(topic_id: post.topic_id,
-                                   embed_url: blog_post_url,
-                                   content_sha1: Digest::SHA1.hexdigest(contents),
-                                   post_id: post.id)
-                topic_path = post.topic.url
-              end
-
-              # If a notifying_username was specified, generate a post in the most recent topic in the blog post category
-              # that a new topic is available.
-              if last_blog_post_topic
-
-                # Older posts that don't exist on this system shouldn't generate "New Post!"
-                if ts > last_blog_post_topic.created_at
-                  creator = PostCreator.new(user_notifying_new_post,
-                    topic_id: last_blog_post_topic.id,
-                    raw: "<h3>New Post!</h3><h4><a href='#{blog_post_url}'>#{title}</a></h4><a href='#{topic_path}'>Go directly to topic</a>")
-                  creator.create
-                else
-                  notify_new_post = false
-                  Rails.logger.info("DiscourseBloggerPlugin: added post older (#{ts}) than most recent (#{last_blog_post_topic.created_at}), suppressing notification.")
-                end
+            # Determine the most recent topic before we create this one, so we can post a 'New Post!' to it.
+            last_blog_post_topic = nil
+            user_notifying_new_post = nil
+            if SiteSetting.user_notifying_new_post_from_blogger.present?
+              user_notifying_new_post = User.where(username_lower: SiteSetting.user_notifying_new_post_from_blogger).first
+              if user_notifying_new_post
+                last_blog_post_topic = Topic.where(category_id: blog_post_category_id).recent(1).first
               end
             end
-          else
-            Rails.logger.info("DiscourseBloggerPlugin: Attempt to post from link that wasn't properly escaped by javascript, likely a bot.")
-            return render :status => :forbidden, :text => "We can't accept first posts from pages that have not been processed by javascript. If you are writing a bot, please contact us on the correct way to generate this URL. Also, if this safeguard appears to be in error, please <a href='/about'>let us know</a>"
+
+            post_creator = PostCreator.new(user,
+                                      title: title,
+                                      created_at: ts,
+                                      raw: contents,
+                                      skip_validations: true,
+                                      cook_method: Post.cook_methods[:raw_html],
+                                      category: blog_post_category_id)
+            post = post_creator.create
+            if post.present?
+              TopicEmbed.create!(topic_id: post.topic_id,
+                                 embed_url: blog_post_url,
+                                 content_sha1: Digest::SHA1.hexdigest(contents),
+                                 post_id: post.id)
+              topic_path = post.topic.url
+            end
+
+            # If a notifying_username was specified, generate a post in the most recent topic in the blog post category
+            # that a new topic is available.
+            if last_blog_post_topic
+
+              # Older posts that don't exist on this system shouldn't generate "New Post!"
+              if ts > last_blog_post_topic.created_at
+                creator = PostCreator.new(user_notifying_new_post,
+                  topic_id: last_blog_post_topic.id,
+                  raw: "<h2>New Post!</h2><h3><a href='#{blog_post_url}'>#{title}</a></h3><a href='#{topic_path}'>Go directly to topic</a>")
+                creator.create
+              else
+                notify_new_post = false
+                Rails.logger.info("DiscourseBloggerPlugin: added post older (#{ts}) than most recent (#{last_blog_post_topic.created_at}), suppressing notification.")
+              end
+            end
           end
         else
           topic = Topic.find_by_id(topic_id)
@@ -133,13 +137,20 @@ after_initialize do
 
     def post_counts
       by_url = {}
+      # This whole mess is because we can't specify Content-Type from the javascript because of Discourse CORS restrictions.
+      request.body.rewind
+      body_text = request.body.read
+      if body_text.present?
+        raw_JSON = JSON.parse(body_text)
 
-      urls = params[:permalinks]
-
-      if urls.present?
-        topic_embeds = TopicEmbed.where(embed_url: urls).includes(:topic).references(:topic)
-        topic_embeds.each do |te|
-            by_url[te.embed_url] = te.topic.posts.count - 1
+        if raw_JSON['permalinks'].present?
+          permalinks = raw_JSON['permalinks'].map { | permalink |
+            getCanonicalHref(permalink)
+          }
+          topic_embeds = TopicEmbed.where(embed_url: permalinks).includes(:topic).references(:topic)
+          topic_embeds.each do |te|
+              by_url[te.embed_url] = te.topic.posts.count - 1
+          end
         end
       end
 
@@ -179,14 +190,14 @@ after_initialize do
             // within the anchor.
             var els = linkEl.getElementsByTagName('span');
             if (els.length == 1) {
-                title = els[0].innerHTML;
+                title = els[0].textContent;
             }
 
             linkEl.href = post + "?" +
-                'ts' = encodeURIComponent(ts) + "&" +
+                'ts=' + encodeURIComponent(ts) + "&" +
                 'author=' + encodeURIComponent(author) + "&" +
                 'title=' + encodeURIComponent(title) + "&" +
-                'pl=' + pl;
+                'pl=' + encodeURIComponent(pl);
         }
 
         if (pl == null) {
@@ -203,6 +214,7 @@ after_initialize do
     //xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     xhr.onreadystatechange = function () {
         if (xhr.readyState == 4 && xhr.status == 200) {
+            var callingThisTwiceRemovesAParseError = xhr.responseText;
             var countsByPermalink = JSON.parse(xhr.responseText).counts;
             for (var i= 0,len=permalinks.length; i < len; i++) {
                 var count = countsByPermalink[permalinks[i]];
