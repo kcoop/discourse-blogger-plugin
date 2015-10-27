@@ -20,7 +20,7 @@ to be the author of this notification. Leave this blank to disable it.
 
 # Demo
 
-The financial blog [Calculated Risk](http://http://www.calculatedriskblog.com/) has its comments linked to the
+The financial blog [Calculated Risk](http://www.calculatedriskblog.com/) has its comments linked to the
 Discourse discussion site [Hoocoodanode?](http://hoocoodanode.org) using this plugin.
 
 ## Installation
