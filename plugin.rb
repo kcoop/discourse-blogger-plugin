@@ -46,7 +46,7 @@ after_initialize do
     def navigate_to
 
       if params[:pl].blank?
-        Rails.logger.warning("DiscourseBloggerPlugin: Bad URL from blogger #{request.url}")
+        Rails.logger.warn("DiscourseBloggerPlugin: Bad URL from blogger #{request.url}")
         return render :status => :forbidden, :text => "Invalid URL #{request.url} from #{SiteSetting.blogger_blog_name}. Please <a href='/about'>let us know</a> how you got this link."
       end
 
@@ -65,7 +65,7 @@ after_initialize do
           end
 
           if params[:title].blank? || params[:author].blank? || params[:ts].blank?
-            Rails.logger.warning("DiscourseBloggerPlugin: Bad URL from blogger #{request.url}")
+            Rails.logger.warn("DiscourseBloggerPlugin: Bad URL from blogger #{request.url}")
             return render :status => :forbidden, :text => "Invalid URL #{request.url} from #{SiteSetting.blogger_blog_name}. Please <a href='/about'>let us know</a> how you got this link."
           end
 
