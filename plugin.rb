@@ -73,7 +73,7 @@ after_initialize do
           author_name = URI.unescape(params[:author])
 
           if params[:ts].present?
-            ts = DateTime.strptime(URI.unescape(params[:ts]), "%m/%d/%Y %I:%M:%S %p")
+            ts = DateTime.strptime(URI.unescape(params[:ts]) + " " + SiteSetting.blogger_blog_timezone, "%m/%d/%Y %I:%M:%S %p %Z")
           else
             ts = Date.new()
           end

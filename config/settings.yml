@@ -3,3 +3,5 @@ plugins:
     default: ''
   user_notifying_new_post_from_blogger:
     default: ''
+  blogger_blog_timezone:
+    default: 'UTC'
