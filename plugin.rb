@@ -200,6 +200,7 @@ after_initialize do
                 title = els[0].textContent;
             }
 
+            ts = decodeURIComponent(ts);
             linkEl.href = post + "?" +
                 'ts=' + encodeURIComponent(ts) + "&" +
                 'author=' + encodeURIComponent(author) + "&" +
