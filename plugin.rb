@@ -45,6 +45,8 @@ after_initialize do
 
     def navigate_to
 
+      Rails.logger.info("DiscourseBloggerPlugin: url: #{request.url} params #{params}")
+
       if params[:pl].blank?
         Rails.logger.warn("DiscourseBloggerPlugin: Bad URL from blogger #{request.url}")
         return render :status => :forbidden, :text => "Invalid URL #{request.url} from #{SiteSetting.blogger_blog_name}. Please <a href='/about'>let us know</a> how you got this link."
