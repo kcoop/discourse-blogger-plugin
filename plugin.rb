@@ -45,7 +45,11 @@ after_initialize do
 
     def navigate_to
 
-      Rails.logger.info("DiscourseBloggerPlugin: url: #{request.url} params #{params}")
+      Rails.logger.warn("DiscourseBloggerPlugin: url: #{request.url}}")
+      Rails.logger.warn("DiscourseBloggerPlugin: ts #{params[:ts]}")
+      Rails.logger.warn("DiscourseBloggerPlugin: author #{params[:author]}")
+      Rails.logger.warn("DiscourseBloggerPlugin: title #{params[:title]}")
+      Rails.logger.warn("DiscourseBloggerPlugin: pl #{params[:pl]}")
 
       if params[:pl].blank?
         Rails.logger.warn("DiscourseBloggerPlugin: Bad URL from blogger #{request.url}")
