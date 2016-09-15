@@ -45,12 +45,6 @@ after_initialize do
 
     def navigate_to
 
-      Rails.logger.warn("DiscourseBloggerPlugin: url: #{request.url}}")
-      Rails.logger.warn("DiscourseBloggerPlugin: ts #{params[:ts]}")
-      Rails.logger.warn("DiscourseBloggerPlugin: author #{params[:author]}")
-      Rails.logger.warn("DiscourseBloggerPlugin: title #{params[:title]}")
-      Rails.logger.warn("DiscourseBloggerPlugin: pl #{params[:pl]}")
-
       if params[:pl].blank?
         Rails.logger.warn("DiscourseBloggerPlugin: Bad URL from blogger #{request.url}")
         return render :status => :forbidden, :text => "Invalid URL #{request.url} from #{SiteSetting.blogger_blog_name}. Please <a href='/about'>let us know</a> how you got this link."
@@ -85,7 +79,7 @@ after_initialize do
           end
 
           Topic.transaction do
-            host_site = EmbeddableHost.record_for_host(blog_post_url)
+            host_site = EmbeddableHost.record_for_url(blog_post_url)
             blog_post_category_id = host_site.try(:category_id)
 
             contents = "Original post may be found on <a href='#{blog_post_url}'>#{SiteSetting.blogger_blog_name}</a>."
